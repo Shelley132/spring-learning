@@ -189,6 +189,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 */
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
+	/**
+	 * 实例回调
+	 */
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
@@ -198,7 +201,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	private boolean nonPublicAccessAllowed = true;
 
 	/**
-	 * 是否以一种款式的模式解析构造函数，默认为true
+	 * 是否以一种宽松的方式解析构造函数，默认为true
 	 */
 	private boolean lenientConstructorResolution = true;
 
@@ -609,7 +612,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 */
 	@Override
 	public boolean isLazyInit() {
-		return (this.lazyInit != null && this.lazyInit.booleanValue());
+		return (this.lazyInit != null && this.lazyInit);
 	}
 
 	/**
@@ -659,6 +662,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 			// Work out whether to apply setter autowiring or constructor autowiring.
 			// If it has a no-arg constructor it's deemed to be setter autowiring,
 			// otherwise we'll try constructor autowiring.
+			// 如果有一个无参的构造器，就是setter自动装配，否则将尝试构造器装配
 			Constructor<?>[] constructors = getBeanClass().getConstructors();
 			for (Constructor<?> constructor : constructors) {
 				if (constructor.getParameterCount() == 0) {
