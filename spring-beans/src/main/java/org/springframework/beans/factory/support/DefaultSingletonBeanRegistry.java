@@ -78,64 +78,76 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 	/**
 	 * Cache of singleton objects: bean name to bean instance.
+	 * bean name-> 实例：单例对象的缓存
 	 */
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
 	/**
 	 * Cache of singleton factories: bean name to ObjectFactory.
+	 * bean name -> ObjectFactory: 单例工厂的缓存
 	 */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
 	/**
 	 * Cache of early singleton objects: bean name to bean instance.
+	 * bean name -> 实例： 早期单例对象的缓存
 	 */
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
 	/**
 	 * Set of registered singletons, containing the bean names in registration order.
+	 * 已注册单例结婚，其中bean name按注册顺序
 	 */
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
 	/**
 	 * Names of beans that are currently in creation.
+	 * 正在创建的bean name
 	 */
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
 	/**
 	 * Names of beans currently excluded from in creation checks.
+	 * 被当前创建排除掉的bean name
 	 */
 	private final Set<String> inCreationCheckExclusions =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
 	/**
 	 * Collection of suppressed Exceptions, available for associating related causes.
+	 * 异常集合
 	 */
 	@Nullable
 	private Set<Exception> suppressedExceptions;
 
 	/**
 	 * Flag that indicates whether we're currently within destroySingletons.
+	 * 当前正在销毁单例
 	 */
 	private boolean singletonsCurrentlyInDestruction = false;
 
 	/**
 	 * Disposable bean instances: bean name to disposable instance.
+	 * bean name -> 一次性实例： 一次性bean实例映射
 	 */
 	private final Map<String, Object> disposableBeans = new LinkedHashMap<>();
 
 	/**
 	 * Map between containing bean names: bean name to Set of bean names that the bean contains.
+	 * bean name -> 这个bean包含的bean name集合
 	 */
 	private final Map<String, Set<String>> containedBeanMap = new ConcurrentHashMap<>(16);
 
 	/**
 	 * Map between dependent bean names: bean name to Set of dependent bean names.
+	 * bean name -> 依赖的bean name集合
 	 */
 	private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
 
 	/**
 	 * Map between depending bean names: bean name to Set of bean names for the bean's dependencies.
+	 * bean name -> 被依赖的bean name集合
 	 */
 	private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
 
@@ -144,12 +156,15 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	public void registerSingleton(String beanName, Object singletonObject) throws IllegalStateException {
 		Assert.notNull(beanName, "Bean name must not be null");
 		Assert.notNull(singletonObject, "Singleton object must not be null");
+		// 锁住单例对象映射缓存
 		synchronized (this.singletonObjects) {
+			// 如果是已经存在的单例，抛错
 			Object oldObject = this.singletonObjects.get(beanName);
 			if (oldObject != null) {
 				throw new IllegalStateException("Could not register object [" + singletonObject +
 						"] under bean name '" + beanName + "': there is already object [" + oldObject + "] bound");
 			}
+			// 否则，加入单例对象缓存，并从单例工厂缓存、早期单例对象缓存移除，加入已注册单例缓存
 			addSingleton(beanName, singletonObject);
 		}
 	}
