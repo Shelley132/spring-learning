@@ -298,7 +298,7 @@ final class PostProcessorRegistrationDelegate {
 		registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);
 
 		// Finally, re-register all internal BeanPostProcessors.
-		// 最后，重新注册所有的内部BeanPostProcesors?
+		// 最后，重新注册所有的内部BeanPostProcessors?
 		// 前面虽然加入了内部列表，但是PriorityOrdered列表和Ordered列表NonOrdered列表也都注册过了，并没有排除掉
 		// 重新注册和注册有啥区别没有？
 		sortPostProcessors(internalPostProcessors, beanFactory);
