@@ -585,7 +585,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
-				// 出则拦截Bean创建的Bean处理器，这里只是注册，真正的调用在getBean
+				// 注册拦截Bean创建的Bean处理器，这里只是注册，真正的调用在getBean
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
@@ -865,7 +865,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see org.springframework.context.support.DefaultLifecycleProcessor
 	 */
 	protected void initLifecycleProcessor() {
+		// 1. 首先获取beanFactory
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// 2如果beanFactory包含lifecycleProcessor这个bean，则从beanFactory获取；
+		// 否则，创建一个默认的LifecycleProcessor
 		if (beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {
 			this.lifecycleProcessor =
 					beanFactory.getBean(LIFECYCLE_PROCESSOR_BEAN_NAME, LifecycleProcessor.class);
@@ -928,11 +931,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 完成BeanFactory的初始化工作，其中包括ConversionService的设置、配置冻结以及非延迟加载的bean的初始化工作
 	 * Finish the initialization of this context's bean factory,
 	 * initializing all remaining singleton beans.
 	 */
 	protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
 		// Initialize conversion service for this context.
+		// 初始化此上下文的转换服务
+		// 如果beanFactory中包含conversionService这个bean，并且这个bean的实际类型匹配，设置ConversionService
 		if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
 				beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
 			beanFactory.setConversionService(
@@ -942,11 +948,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Register a default embedded value resolver if no bean post-processor
 		// (such as a PropertyPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
+		// 检查上下文中是否存在用于解析注解Value属性值的解析器
+		// org.springframework.beans.factory.support.AbstractBeanFactory
+		// /**
+		//	 * String resolvers to apply e.g. to annotation attribute values.
+		//	 */
+		//	private final List<StringValueResolver> embeddedValueResolvers = new CopyOnWriteArrayList<>();
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 
 		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		// 初始化LoadTimeWeaverAware Bean实例对象
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
@@ -956,9 +969,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.setTempClassLoader(null);
 
 		// Allow for caching all bean definition metadata, not expecting further changes.
+		// 冻结所有bean定义元信息，注册的bean定义将不能被修改或者进行任何进一步的处理
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
+		// 初始化非延迟加载
+		// ApplicationContext实现的默认行为是在启动的时候将所有的单例bean提前进行实例化。
+		// 提前实例化意味着作为初始化过程的一部分，ApplicationContext实例会创建并配置所有的单例bean。如果有配置错误，会及时发现。
+		// 实例化的过程即在finishBeanFactoryInitialization中完成的
 		beanFactory.preInstantiateSingletons();
 	}
 
@@ -969,15 +987,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void finishRefresh() {
 		// Clear context-level resource caches (such as ASM metadata from scanning).
+		// 1. 清除上下文资源缓存： 如扫描中的ASM元数据
 		clearResourceCaches();
 
 		// Initialize lifecycle processor for this context.
+		// 初始化上下文生命周期处理器
+		// 当ApplicationContext启动或停止时，它会通过LifecycleProcessor来与所有声明的bean的周期做状态更新。
+		// 而在LifecycleProcessor的使用前首先需要初始化。
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.
+		// 启动生命周期刷新
 		getLifecycleProcessor().onRefresh();
 
 		// Publish the final event.
+		// 当完成ApplicationContext初始化时
+		// 通过Spring中的事件发布机制来发出ContextRefreshedEvent事件，以保证对应的监听器可以做进一步的逻辑处理
 		publishEvent(new ContextRefreshedEvent(this));
 
 		// Participate in LiveBeansView MBean, if active.

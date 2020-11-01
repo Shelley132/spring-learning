@@ -138,8 +138,11 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 	// Internal helpers
 
 	private void startBeans(boolean autoStartupOnly) {
+		// 获取所有的生命周期bean
 		Map<String, Lifecycle> lifecycleBeans = getLifecycleBeans();
+		// 阶段
 		Map<Integer, LifecycleGroup> phases = new HashMap<>();
+		// 遍历所有的生命周期bean，启动bean
 		lifecycleBeans.forEach((beanName, bean) -> {
 			if (!autoStartupOnly || (bean instanceof SmartLifecycle && ((SmartLifecycle) bean).isAutoStartup())) {
 				int phase = getPhase(bean);

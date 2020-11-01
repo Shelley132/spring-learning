@@ -85,7 +85,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- *
  * Spring's default implementation of the {@link ConfigurableListableBeanFactory}
  * and {@link BeanDefinitionRegistry} interfaces: a full-fledged bean factory
  * based on bean definition metadata, extensible through post-processors.
@@ -905,16 +904,25 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
 		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
+		// 拷贝一份当前beanFactory的bean定义名称
+		// 1. 创建beanDefinitionNames的副本beanNames用于后续的遍历，以允许init等方法注册新的bean定义
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		// 2. 遍历所有beanNames，触发所有非延迟加载的单例bean的初始化
 		for (String beanName : beanNames) {
+			// 3. 获取beanName对应的MergedBeanDefinition
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			// 4. 定义中bean：非抽象类，是单例，非懒加载
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
+				// 5. 判断beanName对应的beanName是否为FactoryBean
 				if (isFactoryBean(beanName)) {
+					// 5.1 通过beanName得到对应的FactoryBean示例
+					// 通过getBean(&beanName)拿到的是FactoryBean本身；通过getBean(beanName)拿到的是FactoryBean创建的Bean实例
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						FactoryBean<?> factory = (FactoryBean<?>) bean;
+						// 5.2 判断这个factoryBean是否需要急切地初始化
 						boolean isEagerInit;
 						if (System.getSecurityManager() != null && factory instanceof SmartFactoryBean) {
 							isEagerInit = AccessController.doPrivileged(
@@ -925,20 +933,26 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 									((SmartFactoryBean<?>) factory).isEagerInit());
 						}
 						if (isEagerInit) {
+							// 5.3 如果需要急切的初始化，则通过beanName获取bean实例
 							getBean(beanName);
 						}
 					}
 				} else {
+					// 6. 如果beanName对应的bean不是FactoryBean，只是普通bean，通过beanName获取bean示例
 					getBean(beanName);
 				}
 			}
 		}
 
 		// Trigger post-initialization callback for all applicable beans...
+		// 7. 遍历beanNames: 触发所有可用bean的后置初始化回调
 		for (String beanName : beanNames) {
+			// 7.1 拿到beanName对应的bean实例
 			Object singletonInstance = getSingleton(beanName);
+			// 7.2 判断singletonInstance是否为SmartInitializingSingleton
 			if (singletonInstance instanceof SmartInitializingSingleton) {
 				SmartInitializingSingleton smartSingleton = (SmartInitializingSingleton) singletonInstance;
+				// 7.3 触发SmartInitializingSingleton实现类的afterSingletonsInstantiated方法
 				if (System.getSecurityManager() != null) {
 					AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
 						smartSingleton.afterSingletonsInstantiated();

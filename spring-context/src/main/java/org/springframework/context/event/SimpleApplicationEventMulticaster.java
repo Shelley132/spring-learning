@@ -132,6 +132,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 		// 解析事件类型
 		ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
 		Executor executor = getTaskExecutor();
+		// 遍历所有监听器，并使用监听器中的onApplicationEvent方法进行监听器的处理
 		for (ApplicationListener<?> listener : getApplicationListeners(event, type)) {
 			if (executor != null) {
 				executor.execute(() -> invokeListener(listener, event));
@@ -170,6 +171,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void doInvokeListener(ApplicationListener listener, ApplicationEvent event) {
 		try {
+			// 使用监听器中的onApplicationEvent方法来进行监听器的处理
 			listener.onApplicationEvent(event);
 		}
 		catch (ClassCastException ex) {
